@@ -1,6 +1,9 @@
 # Carbon Footprint Awareness Platform
 
-## Vertical
+## 🚀 Live Demo
+- **Frontend (Web App)**: [https://carbon-footprint-awarene-e3068.web.app](https://carbon-footprint-awarene-e3068.web.app)
+- **Backend (API)**: [https://carbon-footprint-awareness-platform-243330449820.us-central1.run.app](https://carbon-footprint-awareness-platform-243330449820.us-central1.run.app)
+
 **Sustainability / Climate Action**
 
 ## Approach & Logic
