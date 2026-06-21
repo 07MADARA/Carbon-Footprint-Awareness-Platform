@@ -1,60 +1,30 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, Suspense } from 'react';
+import { API_URL, STRINGS, DIET_OPTIONS } from './constants';
+import ErrorBoundary from './ErrorBoundary';
 
-// Replace with your live Google Cloud Run Service URL in .env.production
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/calculate';
+// Lazy load the Dashboard
+const ResultDashboard = React.lazy(() => import('./ResultDashboard'));
 
-/**
- * Leaf Icon SVG Component
- * @returns {JSX.Element}
- */
 const LeafIcon = React.memo(() => (
   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-accent"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
 ));
 
-/**
- * Car Icon SVG Component
- * @returns {JSX.Element}
- */
 const CarIcon = React.memo(() => (
   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
 ));
 
-/**
- * Utensils Icon SVG Component
- * @returns {JSX.Element}
- */
 const UtensilsIcon = React.memo(() => (
   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
 ));
 
-/**
- * Zap Icon SVG Component
- * @returns {JSX.Element}
- */
 const ZapIcon = React.memo(() => (
   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 ));
 
-/**
- * Arrow Right Icon SVG Component
- * @returns {JSX.Element}
- */
 const ArrowRightIcon = React.memo(() => (
   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
 ));
 
-/**
- * Refresh Icon SVG Component
- * @returns {JSX.Element}
- */
-const RefreshCcwIcon = React.memo(() => (
-  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
-));
-
-/**
- * Main Application Component for Carbon Footprint Awareness
- * @returns {JSX.Element}
- */
 function App() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -66,11 +36,6 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  /**
-   * Updates form data state
-   * @param {string} field - The field name to update
-   * @param {string|number} value - The new value
-   */
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -91,10 +56,11 @@ function App() {
       const data = await response.json();
       setResult(data);
     } catch (err) {
-      setError("Failed to calculate footprint. Is the backend running?");
+      console.error(err);
+      setError(STRINGS.NETWORK_ERROR);
     } finally {
       setIsLoading(false);
-      setStep(4); // Move to dashboard
+      setStep(4);
     }
   }, [formData]);
 
@@ -120,24 +86,21 @@ function App() {
   return (
     <main className="min-h-screen bg-brand-dark text-white font-sans flex flex-col items-center justify-center p-4">
       <section className="w-full max-w-xl">
-        {/* Header */}
         <header className="flex items-center justify-center mb-8 space-x-2">
           <LeafIcon />
-          <h1 className="text-2xl font-bold tracking-tight">EcoScore</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{STRINGS.TITLE}</h1>
         </header>
 
-        {/* Card */}
         <article className="bg-brand-surface rounded-2xl shadow-2xl p-6 md:p-10 border border-gray-800 transition-opacity duration-500 relative overflow-hidden">
           
           {step < 4 && stepIndicator}
 
-          {/* Form Steps */}
           {step === 1 && (
             <section aria-labelledby="transport-heading" className="space-y-6 animate-fade-in">
               <div className="text-center">
                 <CarIcon />
-                <h2 id="transport-heading" className="text-xl font-semibold mb-2">Transport</h2>
-                <p className="text-gray-400 text-sm">How many miles do you drive or fly in a typical month?</p>
+                <h2 id="transport-heading" className="text-xl font-semibold mb-2">{STRINGS.TRANSPORT_HEADING}</h2>
+                <p className="text-gray-400 text-sm">{STRINGS.TRANSPORT_DESC}</p>
               </div>
               <input 
                 type="range" 
@@ -148,7 +111,7 @@ function App() {
                 aria-label="Transport miles"
               />
               <div className="text-center text-3xl font-bold text-brand-accent" aria-live="polite">
-                {formData.transportMiles} <span className="text-sm text-gray-400 font-normal">miles</span>
+                {formData.transportMiles} <span className="text-sm text-gray-400 font-normal">{STRINGS.MILES_UNIT}</span>
               </div>
             </section>
           )}
@@ -157,11 +120,11 @@ function App() {
             <section aria-labelledby="diet-heading" className="space-y-6 animate-fade-in">
               <div className="text-center">
                 <UtensilsIcon />
-                <h2 id="diet-heading" className="text-xl font-semibold mb-2">Diet</h2>
-                <p className="text-gray-400 text-sm">How often do you consume meat or animal products?</p>
+                <h2 id="diet-heading" className="text-xl font-semibold mb-2">{STRINGS.DIET_HEADING}</h2>
+                <p className="text-gray-400 text-sm">{STRINGS.DIET_DESC}</p>
               </div>
               <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Diet frequency">
-                {['Daily', 'Frequently', 'Occasionally', 'Rarely', 'Never'].map(option => (
+                {DIET_OPTIONS.map((option) => (
                   <button
                     key={option}
                     role="radio"
@@ -180,8 +143,8 @@ function App() {
             <section aria-labelledby="energy-heading" className="space-y-6 animate-fade-in">
               <div className="text-center">
                 <ZapIcon />
-                <h2 id="energy-heading" className="text-xl font-semibold mb-2">Energy</h2>
-                <p className="text-gray-400 text-sm">What is your average monthly electricity usage (kWh)?</p>
+                <h2 id="energy-heading" className="text-xl font-semibold mb-2">{STRINGS.ENERGY_HEADING}</h2>
+                <p className="text-gray-400 text-sm">{STRINGS.ENERGY_DESC}</p>
               </div>
               <input 
                 type="range" 
@@ -192,86 +155,37 @@ function App() {
                 aria-label="Energy kWh"
               />
               <div className="text-center text-3xl font-bold text-brand-accent" aria-live="polite">
-                {formData.energyKwh} <span className="text-sm text-gray-400 font-normal">kWh</span>
+                {formData.energyKwh} <span className="text-sm text-gray-400 font-normal">{STRINGS.KWH_UNIT}</span>
               </div>
             </section>
           )}
 
-          {/* Result Dashboard */}
           {step === 4 && (
             <section aria-label="Results Dashboard" className="space-y-8 animate-fade-in">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12" aria-live="assertive">
                   <div className="w-12 h-12 border-4 border-brand-surface border-t-brand-accent rounded-full animate-spin mb-4" role="status" aria-label="Loading"></div>
-                  <p className="text-gray-400 animate-pulse">Analyzing footprint...</p>
+                  <p className="text-gray-400 animate-pulse">{STRINGS.LOADING_TEXT}</p>
                 </div>
               ) : error ? (
                 <div className="text-center py-8" role="alert">
-                  <div className="text-red-500 mb-4 font-bold text-xl">Oops!</div>
+                  <div className="text-red-500 mb-4 font-bold text-xl">{STRINGS.OOPS}</div>
                   <p className="text-gray-300">{error}</p>
-                  <button aria-label="Try calculation again" onClick={resetForm} className="mt-6 text-brand-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent rounded">Try Again</button>
+                  <button aria-label="Try calculation again" onClick={resetForm} className="mt-6 text-brand-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent rounded">{STRINGS.TRY_AGAIN}</button>
                 </div>
               ) : result ? (
-                <div>
-                  <header className="text-center mb-8">
-                    <h2 className="text-lg text-gray-400 mb-2">Your Monthly Carbon Footprint</h2>
-                    <div className="text-5xl font-bold text-white mb-2" aria-live="polite">
-                      {result.totalFootprint} <span className="text-2xl text-gray-500">kg CO₂</span>
-                    </div>
-                    {/* Visual Indicator */}
-                    <div className={`text-sm font-semibold py-1 px-3 rounded-full inline-block ${result.totalFootprint < 300 ? 'bg-green-500/20 text-green-400' : result.totalFootprint < 600 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {result.totalFootprint < 300 ? 'Excellent - Below Average' : result.totalFootprint < 600 ? 'Average - Room to Improve' : 'High - Action Needed'}
-                    </div>
-                  </header>
-
-                  <section className="bg-brand-dark rounded-xl p-5 mb-6" aria-label="Emission Breakdown">
-                    <h3 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Emission Breakdown</h3>
-                    <div className="space-y-4">
-                      {['transport', 'diet', 'energy'].map(cat => (
-                        <div key={cat} className="flex items-center">
-                          <div className="w-24 capitalize text-sm">{cat}</div>
-                          <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden mx-3" role="progressbar" aria-valuenow={(result[cat] / result.totalFootprint) * 100} aria-valuemin="0" aria-valuemax="100">
-                            <div 
-                              className={`h-full rounded-full transition-all duration-1000 ${cat === result.highestCategory ? 'bg-red-500' : 'bg-brand-accent'}`}
-                              style={{ width: `${Math.max(5, (result[cat] / result.totalFootprint) * 100)}%` }}
-                            ></div>
-                          </div>
-                          <div className="w-16 text-right text-sm text-gray-400">{result[cat]} kg</div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="bg-brand-accent/10 border border-brand-accent/20 rounded-xl p-5" aria-label="Actionable Tips">
-                    <h3 className="text-sm font-semibold text-brand-accent mb-3 flex items-center">
-                      <ZapIcon /> Actionable Tips ({result.highestCategory})
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      {result.tips.map((tip, idx) => (
-                        <li key={idx} className="flex items-start">
-                          <span className="text-brand-accent mr-2 mt-1" aria-hidden="true">•</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                  
-                  <div className="mt-8 text-center">
-                    <button aria-label="Recalculate footprint" onClick={resetForm} className="flex items-center justify-center w-full py-3 bg-gray-800 hover:bg-gray-700 transition-colors rounded-xl font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent">
-                      <RefreshCcwIcon /> Recalculate
-                    </button>
-                  </div>
-                </div>
+                <Suspense fallback={<div className="flex justify-center p-8"><div className="w-8 h-8 border-4 border-brand-accent border-t-transparent rounded-full animate-spin"></div></div>}>
+                  <ResultDashboard result={result} resetForm={resetForm} />
+                </Suspense>
               ) : null}
             </section>
           )}
 
-          {/* Navigation Buttons */}
           {step < 4 && (
             <nav className="flex justify-between mt-10" aria-label="Form Navigation">
               {step > 1 ? (
                 <button aria-label="Go Back" onClick={handleBack} className="px-6 py-3 rounded-xl border border-gray-700 hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent">
-                  Back
+                  {STRINGS.BACK}
                 </button>
               ) : <div></div>}
               <button 
@@ -279,7 +193,7 @@ function App() {
                 onClick={step === 3 ? handleSubmit : handleNext} 
                 className="px-6 py-3 rounded-xl bg-brand-accent text-brand-dark font-bold hover:bg-emerald-400 transition-colors flex items-center shadow-lg shadow-brand-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
               >
-                {step === 3 ? 'Calculate' : 'Next'} <span className="ml-2" aria-hidden="true"><ArrowRightIcon /></span>
+                {step === 3 ? STRINGS.CALCULATE : STRINGS.NEXT} <span className="ml-2" aria-hidden="true"><ArrowRightIcon /></span>
               </button>
             </nav>
           )}
